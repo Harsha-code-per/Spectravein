@@ -6,15 +6,12 @@ FastAPI endpoints that orchestrate service calls and return responses.
 import sys
 import traceback
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.exc import SQLAlchemyError, OperationalError
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, HTTPException
 
-from app.db.database import ensure_database_schema, get_db
-from app.models.domain import AsteroidDB
 from app.models.schemas import AsteroidTarget, HealthCheckResponse
 from app.core.config import settings
 from app.services import economics, orbital, physics
+from app.data import loader
 
 # Create router instance
 router = APIRouter()
@@ -27,24 +24,25 @@ def _is_pha(moid_au: float, absolute_magnitude: float) -> bool:
     return moid_au < 0.05 and absolute_magnitude <= 22.0
 
 
-def _map_db_row_to_target(row: AsteroidDB) -> AsteroidTarget:
+def _map_csv_row_to_target(row: dict) -> AsteroidTarget:
     """
-    Map ORM row to the existing AsteroidTarget schema without changing response keys.
+    Map CSV row dictionary to AsteroidTarget schema with full calculations.
     """
-    designation = str(row.designation).strip()
-    name = (row.name or row.designation or "").strip()
-    spectral_class = str(row.class_label).strip().upper()
+    # Extract base data from CSV
+    designation = str(row.get('designation', row.get('id', 'UNKNOWN'))).strip()
+    name = str(row.get('name', row.get('full_name', designation))).strip()
+    spectral_class = str(row.get('class_label', 'U')).strip().upper()
 
-    diameter_min = float(row.est_diameter_min)
-    diameter_max = float(row.est_diameter_max)
+    diameter_min = float(row.get('est_diameter_min', 0))
+    diameter_max = float(row.get('est_diameter_max', 0))
     diameter_km = (diameter_min + diameter_max) / 2.0
 
-    albedo = float(row.albedo)
-    inclination = float(row.i)
-    moid = float(row.moid)
-    semi_major_axis_au = float(row.a)
-    eccentricity = float(row.e)
-    absolute_magnitude = float(row.absolute_magnitude)
+    albedo = float(row.get('albedo', 0.1))
+    inclination = float(row.get('i', 0))
+    moid = float(row.get('moid', 0))
+    semi_major_axis_au = float(row.get('a', 1.0))
+    eccentricity = float(row.get('e', 0))
+    absolute_magnitude = float(row.get('absolute_magnitude', 20.0))
 
     accessibility_score = physics.calculate_accessibility_score(inclination)
     estimated_mass_kg = physics.estimate_mass_kg(diameter_km, spectral_class)
@@ -126,40 +124,27 @@ def health_check():
 
 
 @router.get("/api/targets", response_model=List[AsteroidTarget], tags=["Targets"])
-def get_targets(db: Session = Depends(get_db)):
+def get_targets():
     """
-    Retrieve all Near-Earth Asteroid mining targets.
+    Retrieve all Near-Earth Asteroid mining targets from CSV.
     
     Returns:
-        List of 802 NEO targets with complete orbital, physical, and economic data.
+        List of 802+ NEO targets with complete orbital, physical, and economic data.
         Sorted by estimated_value_usd descending (most valuable first).
+    
+    Data Source:
+        backend/asteroid_labeled.csv (direct file read, no database required)
     
     Response Model:
         List[AsteroidTarget] — see app/models/schemas.py for full schema
     
-    Query Parameters (Future):
-        - page: int = 1 (pagination)
-        - limit: int = 50 (results per page)
-        - spectral_class: str = None (filter by C/S/M)
-        - min_value: float = None (minimum valuation threshold)
-        - min_accessibility: float = None (minimum accessibility score)
-        - exclude_pha: bool = False (filter out Potentially Hazardous Asteroids)
-    
     Performance:
-        - Current: PostgreSQL query + in-memory metric computation
-        - Target: <50ms (PostgreSQL with indexed computed columns/materialized metrics)
-    
-    Caching Strategy (Future):
-        - Cache response in Redis (TTL: 1 hour)
-        - Invalidate on NASA API updates (daily)
-        - Add ETag header for client-side caching
+        - CSV load + pandas processing: ~50-100ms
+        - Physics/economics calculations: In-memory per request
     
     Error Handling:
-        - 503: Database unavailable
+        - 503: CSV file not found or corrupted
         - 500: Unexpected processing error (check logs)
-    
-    Example Request:
-        GET /api/targets
     
     Example Response:
         [
@@ -188,59 +173,38 @@ def get_targets(db: Session = Depends(get_db)):
         ]
     """
     try:
-        print("[TARGETS] Starting database schema check...", file=sys.stderr)
-        ensure_database_schema()
+        print("[TARGETS] Loading asteroid data from CSV...", file=sys.stderr)
+        raw_records = loader.build_asteroid_targets()
         
-        print("[TARGETS] Querying asteroids from database...", file=sys.stderr)
-        targets_db = db.query(AsteroidDB).all()
-        
-        if not targets_db:
-            error_msg = (
-                "Asteroid dataset is empty in the database. "
-                "Run backend/seed_db.py against the production DATABASE_URL."
-            )
+        if not raw_records:
+            error_msg = "Asteroid CSV is empty or unreadable."
             print(f"[TARGETS] ⚠️  {error_msg}", file=sys.stderr)
             raise HTTPException(
                 status_code=503,
                 detail=error_msg,
             )
         
-        print(f"[TARGETS] ✅ Loaded {len(targets_db)} asteroids, mapping to response schema...", file=sys.stderr)
-        targets = [_map_db_row_to_target(row) for row in targets_db]
+        print(f"[TARGETS] ✅ Loaded {len(raw_records)} asteroids, computing metrics...", file=sys.stderr)
+        targets = [_map_csv_row_to_target(row) for row in raw_records]
         targets.sort(key=lambda target: target.estimated_value_usd, reverse=True)
         print(f"[TARGETS] ✅ Successfully returning {len(targets)} targets", file=sys.stderr)
         return targets
 
-    except OperationalError as exc:
-        # Connection/authentication errors from psycopg2
+    except FileNotFoundError as exc:
         error_detail = str(exc)
-        print(f"[TARGETS] ❌ OPERATIONAL ERROR (Connection/Auth): {error_detail}", file=sys.stderr)
-        print(f"[TARGETS] Full traceback:\n{traceback.format_exc()}", file=sys.stderr)
-        
-        if "password authentication failed" in error_detail:
-            detail = (
-                "Database authentication failed. Check DATABASE_URL in Render environment. "
-                "Verify password is correct from Supabase Connection Pooling tab."
-            )
-        elif "could not translate host name" in error_detail:
-            detail = f"Database host not found. Check hostname: {error_detail}"
-        elif "connection refused" in error_detail:
-            detail = f"Database connection refused. Check host/port. {error_detail}"
-        elif "timeout" in error_detail.lower():
-            detail = f"Database connection timeout. Check network/firewall. {error_detail}"
-        else:
-            detail = f"Database connection error: {error_detail}"
-        
-        raise HTTPException(status_code=503, detail=detail)
-
-    except SQLAlchemyError as exc:
-        # Other SQLAlchemy errors
-        error_detail = str(exc)
-        print(f"[TARGETS] ❌ SQLAlchemy Error: {error_detail}", file=sys.stderr)
-        print(f"[TARGETS] Full traceback:\n{traceback.format_exc()}", file=sys.stderr)
+        print(f"[TARGETS] ❌ CSV FILE NOT FOUND: {error_detail}", file=sys.stderr)
         raise HTTPException(
             status_code=503,
-            detail=f"Database query error: {error_detail[:100]}"
+            detail=f"Asteroid data file not found: {error_detail}"
+        )
+
+    except ValueError as exc:
+        # CSV validation errors (missing columns, etc.)
+        error_detail = str(exc)
+        print(f"[TARGETS] ❌ CSV VALIDATION ERROR: {error_detail}", file=sys.stderr)
+        raise HTTPException(
+            status_code=503,
+            detail=f"Asteroid data file is corrupted: {error_detail}"
         )
 
     except Exception as exc:
