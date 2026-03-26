@@ -6,15 +6,20 @@ FastAPI endpoints that orchestrate service calls and return responses.
 import sys
 import traceback
 from typing import List
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
+
+# ── Rate Limiting Imports ────────────────────────────────────────────────
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 from app.models.schemas import AsteroidTarget, HealthCheckResponse
 from app.core.config import settings
 from app.services import economics, orbital, physics
 from app.data import loader
 
-# Create router instance
+# Initialize Router and Rate Limiter
 router = APIRouter()
+limiter = Limiter(key_func=get_remote_address)
 
 
 def _is_pha(moid_au: float, absolute_magnitude: float) -> bool:
@@ -28,7 +33,6 @@ def _map_csv_row_to_target(row: dict) -> AsteroidTarget:
     """
     Map CSV row dictionary to AsteroidTarget schema with full calculations.
     """
-    # Extract base data from CSV
     designation = str(row.get('designation', row.get('id', 'UNKNOWN'))).strip()
     name = str(row.get('name', row.get('full_name', designation))).strip()
     spectral_class = str(row.get('class_label', 'U')).strip().upper()
@@ -91,29 +95,10 @@ def _map_csv_row_to_target(row: dict) -> AsteroidTarget:
 
 
 @router.get("/", response_model=HealthCheckResponse, tags=["Health"])
-def health_check():
+@limiter.limit("20/minute")  # ✅ Prevent ping floods
+def health_check(request: Request):
     """
     Health check endpoint for monitoring and load balancers.
-    
-    Returns:
-        Service status, version, and environment information
-    
-    Usage:
-        - Azure App Service: Used by health probe to verify service is running
-        - Load Balancers: Determines if instance should receive traffic
-        - Monitoring: Uptime checks (UptimeRobot, Pingdom, etc.)
-    
-    Status Codes:
-        - 200: Service operational
-        - 503: Service degraded (future: check database connectivity)
-    
-    Response Example:
-        {
-            "status": "Operational",
-            "service": "SPECTRAVEIN Mining Intelligence API",
-            "version": "2.0.0",
-            "environment": "production"
-        }
     """
     return HealthCheckResponse(
         status="Operational",
@@ -124,53 +109,10 @@ def health_check():
 
 
 @router.get("/api/targets", response_model=List[AsteroidTarget], tags=["Targets"])
-def get_targets():
+@limiter.limit("30/minute")  # ✅ Prevent CSV processing DoS attacks
+def get_targets(request: Request):
     """
     Retrieve all Near-Earth Asteroid mining targets from CSV.
-    
-    Returns:
-        List of 802+ NEO targets with complete orbital, physical, and economic data.
-        Sorted by estimated_value_usd descending (most valuable first).
-    
-    Data Source:
-        backend/asteroid_labeled.csv (direct file read, no database required)
-    
-    Response Model:
-        List[AsteroidTarget] — see app/models/schemas.py for full schema
-    
-    Performance:
-        - CSV load + pandas processing: ~50-100ms
-        - Physics/economics calculations: In-memory per request
-    
-    Error Handling:
-        - 503: CSV file not found or corrupted
-        - 500: Unexpected processing error (check logs)
-    
-    Example Response:
-        [
-            {
-                "id": "2000433",
-                "full_name": "433 Eros",
-                "diameter_km": 16.84,
-                "albedo": 0.25,
-                "inclination": 10.83,
-                "moid": 0.148,
-                "spectral_class": "S",
-                "accessibility_score": 78.34,
-                "estimated_mass_kg": 6.69e15,
-                "estimated_value_usd": 6.69e16,
-                "adjusted_value_usd": 5.12e16,
-                "mission_cost_usd": 7.42e9,
-                "net_profit_usd": 5.11e16,
-                "earth_co2_offset_tons": 2.68e14,
-                "semi_major_axis_au": 1.458,
-                "eccentricity": 0.223,
-                "next_pass_date": "FEB 2028",
-                "xai_summary": "SPECTRAVEIN has classified...",
-                "pha": false
-            },
-            ...
-        ]
     """
     try:
         print("[TARGETS] Loading asteroid data from CSV...", file=sys.stderr)
@@ -199,7 +141,6 @@ def get_targets():
         )
 
     except ValueError as exc:
-        # CSV validation errors (missing columns, etc.)
         error_detail = str(exc)
         print(f"[TARGETS] ❌ CSV VALIDATION ERROR: {error_detail}", file=sys.stderr)
         raise HTTPException(
@@ -208,7 +149,6 @@ def get_targets():
         )
 
     except Exception as exc:
-        # Unexpected errors
         error_detail = str(exc)
         print(f"[TARGETS] ❌ UNEXPECTED ERROR: {error_detail}", file=sys.stderr)
         print(f"[TARGETS] Full traceback:\n{traceback.format_exc()}", file=sys.stderr)
@@ -216,24 +156,3 @@ def get_targets():
             status_code=500,
             detail=f"Internal error: {error_detail[:100]}"
         )
-
-# ── Future Endpoints ──────────────────────────────────────────────────────
-#
-# @router.get("/api/targets/{asteroid_id}", response_model=AsteroidTarget)
-# async def get_target_by_id(asteroid_id: str):
-#     """Get detailed information for a specific asteroid."""
-#     pass
-#
-# @router.get("/api/targets/search", response_model=List[AsteroidTarget])
-# async def search_targets(
-#     q: str,
-#     spectral_class: str | None = None,
-#     min_value: float | None = None,
-# ):
-#     """Search asteroids by name or filter by criteria."""
-#     pass
-#
-# @router.post("/api/missions/simulate", response_model=MissionSimulation)
-# async def simulate_mission(request: MissionRequest):
-#     """Simulate a mining mission with custom parameters."""
-#     pass
