@@ -3,9 +3,11 @@ API route handlers.
 FastAPI endpoints that orchestrate service calls and return responses.
 """
 
+import sys
+import traceback
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import SQLAlchemyError, OperationalError
 from sqlalchemy.orm import Session
 
 from app.db.database import ensure_database_schema, get_db
@@ -186,32 +188,69 @@ def get_targets(db: Session = Depends(get_db)):
         ]
     """
     try:
+        print("[TARGETS] Starting database schema check...", file=sys.stderr)
         ensure_database_schema()
+        
+        print("[TARGETS] Querying asteroids from database...", file=sys.stderr)
         targets_db = db.query(AsteroidDB).all()
+        
         if not targets_db:
+            error_msg = (
+                "Asteroid dataset is empty in the database. "
+                "Run backend/seed_db.py against the production DATABASE_URL."
+            )
+            print(f"[TARGETS] ⚠️  {error_msg}", file=sys.stderr)
             raise HTTPException(
                 status_code=503,
-                detail=(
-                    "Asteroid dataset is empty in the database. "
-                    "Run backend/seed_db.py against the production DATABASE_URL."
-                ),
+                detail=error_msg,
             )
+        
+        print(f"[TARGETS] ✅ Loaded {len(targets_db)} asteroids, mapping to response schema...", file=sys.stderr)
         targets = [_map_db_row_to_target(row) for row in targets_db]
         targets.sort(key=lambda target: target.estimated_value_usd, reverse=True)
+        print(f"[TARGETS] ✅ Successfully returning {len(targets)} targets", file=sys.stderr)
         return targets
 
+    except OperationalError as exc:
+        # Connection/authentication errors from psycopg2
+        error_detail = str(exc)
+        print(f"[TARGETS] ❌ OPERATIONAL ERROR (Connection/Auth): {error_detail}", file=sys.stderr)
+        print(f"[TARGETS] Full traceback:\n{traceback.format_exc()}", file=sys.stderr)
+        
+        if "password authentication failed" in error_detail:
+            detail = (
+                "Database authentication failed. Check DATABASE_URL in Render environment. "
+                "Verify password is correct from Supabase Connection Pooling tab."
+            )
+        elif "could not translate host name" in error_detail:
+            detail = f"Database host not found. Check hostname: {error_detail}"
+        elif "connection refused" in error_detail:
+            detail = f"Database connection refused. Check host/port. {error_detail}"
+        elif "timeout" in error_detail.lower():
+            detail = f"Database connection timeout. Check network/firewall. {error_detail}"
+        else:
+            detail = f"Database connection error: {error_detail}"
+        
+        raise HTTPException(status_code=503, detail=detail)
+
     except SQLAlchemyError as exc:
-        print(f"❌ Database query failed in /api/targets: {exc}")
+        # Other SQLAlchemy errors
+        error_detail = str(exc)
+        print(f"[TARGETS] ❌ SQLAlchemy Error: {error_detail}", file=sys.stderr)
+        print(f"[TARGETS] Full traceback:\n{traceback.format_exc()}", file=sys.stderr)
         raise HTTPException(
             status_code=503,
-            detail="Database unavailable. Please verify Supabase connectivity."
+            detail=f"Database query error: {error_detail[:100]}"
         )
 
-    except ValueError as exc:
-        # Data parsing/validation failed
+    except Exception as exc:
+        # Unexpected errors
+        error_detail = str(exc)
+        print(f"[TARGETS] ❌ UNEXPECTED ERROR: {error_detail}", file=sys.stderr)
+        print(f"[TARGETS] Full traceback:\n{traceback.format_exc()}", file=sys.stderr)
         raise HTTPException(
             status_code=500,
-            detail=f"Data validation error: {str(exc)}"
+            detail=f"Internal error: {error_detail[:100]}"
         )
 
 # ── Future Endpoints ──────────────────────────────────────────────────────

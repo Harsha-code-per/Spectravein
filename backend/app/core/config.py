@@ -26,6 +26,11 @@ class Settings(BaseSettings):
         Optional explicit override for Supabase connection string.
         If set, it takes precedence over DATABASE_URL.
     
+    SUPABASE_DATABASE_URL_DIRECT : str
+        Direct PostgreSQL connection (bypasses Connection Pooling).
+        Format: postgresql://user:pass@aws-X-region.db.supabase.com:5432/postgres
+        Use this if Connection Pooling (port 6543) has issues.
+    
     ENVIRONMENT : str
         Deployment environment (development, staging, production)
     
@@ -39,6 +44,7 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = ""
     SUPABASE_DATABASE_URL: str = ""
+    SUPABASE_DATABASE_URL_DIRECT: str = ""  # Fallback to direct connection
     
     # Application Metadata
     APP_NAME: str = "SPECTRAVEIN Mining Intelligence API"
