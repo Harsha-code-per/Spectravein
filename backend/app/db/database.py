@@ -7,6 +7,7 @@ from collections.abc import Generator
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
+from sqlalchemy.pool import NullPool  # <-- 1. ADDED THIS IMPORT
 
 from app.core.config import settings
 
@@ -32,7 +33,7 @@ DATABASE_URL = _build_database_url()
 
 engine = create_engine(
     DATABASE_URL,
-    pool_pre_ping=True,
+    poolclass=NullPool,  # <-- 2. STRIPPED LOCAL POOLING TO FIX PGBOUNCER CLASH
 )
 
 SessionLocal = sessionmaker(
