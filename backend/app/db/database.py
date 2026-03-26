@@ -6,8 +6,9 @@ Provides engine, session factory, and declarative base.
 from collections.abc import Generator
 
 from sqlalchemy import create_engine
+from sqlalchemy.engine import make_url
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
-from sqlalchemy.pool import NullPool  # <-- 1. ADDED THIS IMPORT
+from sqlalchemy.pool import NullPool
 
 from app.core.config import settings
 
@@ -15,25 +16,37 @@ from app.core.config import settings
 def _build_database_url() -> str:
     """
     Resolve DATABASE_URL from settings and fail fast if missing.
+    Automatically enforce SSL for non-local PostgreSQL hosts.
     """
-    database_url = settings.DATABASE_URL.strip()
-    if not database_url:
+    raw_database_url = settings.DATABASE_URL.strip()
+    if not raw_database_url:
         raise ValueError(
             "DATABASE_URL is not configured. Set it in backend/.env or environment."
         )
 
     # Normalize common postgres scheme for SQLAlchemy compatibility.
-    if database_url.startswith("postgres://"):
-        database_url = database_url.replace("postgres://", "postgresql://", 1)
+    if raw_database_url.startswith("postgres://"):
+        raw_database_url = raw_database_url.replace("postgres://", "postgresql://", 1)
 
-    return database_url
+    url = make_url(raw_database_url)
+
+    is_postgres = url.drivername.startswith("postgresql")
+    host = (url.host or "").lower()
+    is_local_host = host in {"localhost", "127.0.0.1"} or host.startswith("127.")
+
+    if is_postgres and not is_local_host and "sslmode" not in url.query:
+        url = url.update_query_dict({"sslmode": "require"})
+
+    return str(url)
 
 
 DATABASE_URL = _build_database_url()
 
 engine = create_engine(
     DATABASE_URL,
-    poolclass=NullPool,  # <-- 2. STRIPPED LOCAL POOLING TO FIX PGBOUNCER CLASH
+    poolclass=NullPool,
+    pool_pre_ping=True,
+    connect_args={"connect_timeout": 10},
 )
 
 SessionLocal = sessionmaker(

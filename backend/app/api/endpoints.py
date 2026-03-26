@@ -187,6 +187,14 @@ def get_targets(db: Session = Depends(get_db)):
     """
     try:
         targets_db = db.query(AsteroidDB).all()
+        if not targets_db:
+            raise HTTPException(
+                status_code=503,
+                detail=(
+                    "Asteroid dataset is empty in the database. "
+                    "Run backend/seed_db.py against the production DATABASE_URL."
+                ),
+            )
         targets = [_map_db_row_to_target(row) for row in targets_db]
         targets.sort(key=lambda target: target.estimated_value_usd, reverse=True)
         return targets
