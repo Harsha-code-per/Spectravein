@@ -1,4 +1,4 @@
-# SPECTRAVEIN · Astrava SpaceTech
+# SPECTRAVEIN · Spectravein Intelligence
 
 > **Orbital Mining Intelligence & Economic Feasibility Engine**  
 > *Transforming raw NASA/JPL spectral data into high-yield financial targets.*
@@ -38,7 +38,7 @@ We treat each Near-Earth Object as a **financial instrument**: classifying its s
 
 SPECTRAVEIN speaks two languages simultaneously: **astrophysics** and **commercial aerospace economics**. A geologist can verify the orbital mechanics. A venture capitalist can read the mission briefing. Both will find the numbers honest.
 
-Built during a 24-hour hackathon. Production-grade in execution. **802 Near-Earth Asteroids** catalogued, classified, and priced — live.
+**802 Near-Earth Asteroids** catalogued, classified, and priced — live.
 
 ---
 
@@ -413,7 +413,7 @@ The modal makes explicit that **choosing a closer launch window lowers the CapEx
 ## Project Structure
 
 ```
-astrava-spacetech/
+spectravein/
 │
 ├── README.md
 │
@@ -563,8 +563,8 @@ No query parameters required.
 ### Step 1 — Clone
 
 ```bash
-git clone https://github.com/your-org/astrava-spacetech.git
-cd astrava-spacetech
+git clone https://github.com/your-org/spectravein.git
+cd spectravein
 ```
 
 ---
@@ -770,7 +770,11 @@ The Planetary Defense Lock feature reflects the authors' good-faith interpretati
 
 <div align="center">
 
-**SPECTRAVEIN · Astrava SpaceTech**  
-*Built in 24 hours. Designed for the next century.*
+**SPECTRAVEIN · Spectravein Intelligence**  
+*Designed for the next century.*
 
 </div>
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details. Created by Harshavardhan K.

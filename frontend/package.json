@@ -1,6 +1,7 @@
 {
-  "name": "frontend",
-  "version": "0.1.0",
+  "name": "spectravein",
+  "version": "1.0.0",
+  "author": "Harshavardhan K",
   "private": true,
   "scripts": {
     "dev": "next dev",
