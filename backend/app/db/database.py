@@ -4,8 +4,9 @@ Provides engine, session factory, and declarative base.
 """
 
 from collections.abc import Generator
+from threading import Lock
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.engine import make_url
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
 from sqlalchemy.pool import NullPool
@@ -56,6 +57,8 @@ SessionLocal = sessionmaker(
 )
 
 Base = declarative_base()
+_schema_ready = False
+_schema_lock = Lock()
 
 
 def get_db() -> Generator[Session, None, None]:
@@ -67,3 +70,28 @@ def get_db() -> Generator[Session, None, None]:
         yield db
     finally:
         db.close()
+
+
+def ensure_database_schema() -> None:
+    """
+    Ensure required DB objects/columns exist for current ORM model.
+    Safe to call on every request; it runs only once per process.
+    """
+    global _schema_ready
+
+    if _schema_ready:
+        return
+
+    with _schema_lock:
+        if _schema_ready:
+            return
+
+        Base.metadata.create_all(bind=engine)
+
+        # Backfill schema drift for environments seeded before `name` existed.
+        with engine.begin() as connection:
+            connection.execute(
+                text("ALTER TABLE asteroids ADD COLUMN IF NOT EXISTS name VARCHAR")
+            )
+
+        _schema_ready = True

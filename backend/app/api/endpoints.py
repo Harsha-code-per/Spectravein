@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from app.db.database import get_db
+from app.db.database import ensure_database_schema, get_db
 from app.models.domain import AsteroidDB
 from app.models.schemas import AsteroidTarget, HealthCheckResponse
 from app.core.config import settings
@@ -186,6 +186,7 @@ def get_targets(db: Session = Depends(get_db)):
         ]
     """
     try:
+        ensure_database_schema()
         targets_db = db.query(AsteroidDB).all()
         if not targets_db:
             raise HTTPException(
@@ -199,7 +200,8 @@ def get_targets(db: Session = Depends(get_db)):
         targets.sort(key=lambda target: target.estimated_value_usd, reverse=True)
         return targets
 
-    except SQLAlchemyError:
+    except SQLAlchemyError as exc:
+        print(f"❌ Database query failed in /api/targets: {exc}")
         raise HTTPException(
             status_code=503,
             detail="Database unavailable. Please verify Supabase connectivity."
