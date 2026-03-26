@@ -6,20 +6,15 @@ FastAPI endpoints that orchestrate service calls and return responses.
 import sys
 import traceback
 from typing import List
-from fastapi import APIRouter, HTTPException, Request
-
-# ── Rate Limiting Imports ────────────────────────────────────────────────
-from slowapi import Limiter
-from slowapi.util import get_remote_address
+from fastapi import APIRouter, HTTPException
 
 from app.models.schemas import AsteroidTarget, HealthCheckResponse
 from app.core.config import settings
 from app.services import economics, orbital, physics
 from app.data import loader
 
-# Initialize Router and Rate Limiter
+# Create router instance
 router = APIRouter()
-limiter = Limiter(key_func=get_remote_address)
 
 
 def _is_pha(moid_au: float, absolute_magnitude: float) -> bool:
@@ -95,8 +90,7 @@ def _map_csv_row_to_target(row: dict) -> AsteroidTarget:
 
 
 @router.get("/", response_model=HealthCheckResponse, tags=["Health"])
-@limiter.limit("20/minute")  # ✅ Prevent ping floods
-def health_check(request: Request):
+def health_check():
     """
     Health check endpoint for monitoring and load balancers.
     """
@@ -109,8 +103,7 @@ def health_check(request: Request):
 
 
 @router.get("/api/targets", response_model=List[AsteroidTarget], tags=["Targets"])
-@limiter.limit("30/minute")  # ✅ Prevent CSV processing DoS attacks
-def get_targets(request: Request):
+def get_targets():
     """
     Retrieve all Near-Earth Asteroid mining targets from CSV.
     """
