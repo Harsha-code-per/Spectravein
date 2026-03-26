@@ -21,6 +21,10 @@ class Settings(BaseSettings):
     DATABASE_URL : str
         PostgreSQL connection string (Supabase/Azure PostgreSQL).
         Example: "postgresql://user:pass@host:5432/spectravein"
+
+    SUPABASE_DATABASE_URL : str
+        Optional explicit override for Supabase connection string.
+        If set, it takes precedence over DATABASE_URL.
     
     ENVIRONMENT : str
         Deployment environment (development, staging, production)
@@ -34,6 +38,7 @@ class Settings(BaseSettings):
     
     # Database
     DATABASE_URL: str = ""
+    SUPABASE_DATABASE_URL: str = ""
     
     # Application Metadata
     APP_NAME: str = "SPECTRAVEIN Mining Intelligence API"

@@ -19,7 +19,9 @@ def _build_database_url() -> str:
     Resolve DATABASE_URL from settings and fail fast if missing.
     Automatically enforce SSL for non-local PostgreSQL hosts.
     """
-    raw_database_url = settings.DATABASE_URL.strip()
+    raw_database_url = (
+        settings.SUPABASE_DATABASE_URL.strip() or settings.DATABASE_URL.strip()
+    )
     if not raw_database_url:
         raise ValueError(
             "DATABASE_URL is not configured. Set it in backend/.env or environment."
