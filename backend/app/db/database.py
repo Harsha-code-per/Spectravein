@@ -85,38 +85,63 @@ def _mask_password(url: str) -> str:
         return url
 
 
-DATABASE_URL = _build_database_url()
+# ── LAZY INITIALIZATION ──────────────────────────────────────────────────────
+# Database connection is NOT created at import time to avoid connection errors
+# when database is not needed (e.g., CSV-only mode).
+#
+# To use database features:
+# 1. Uncomment the initialization code below
+# 2. Call get_db() in your endpoints
+# 3. Ensure DATABASE_URL is set in environment
+#
+# DATABASE_URL = _build_database_url()
+# 
+# # Enhanced engine configuration for Supabase Connection Pooling
+# engine = create_engine(
+#     DATABASE_URL,
+#     poolclass=NullPool,  # Critical: NullPool prevents pool conflicts with pgBouncer
+#     pool_pre_ping=True,  # Test connection before using
+#     connect_args={
+#         "connect_timeout": 10,
+#         "keepalives": 1,
+#         "keepalives_idle": 30,
+#     },
+#     echo=False,  # Set to True for SQL debugging
+# )
+# 
+# SessionLocal = sessionmaker(
+#     autocommit=False,
+#     autoflush=False,
+#     bind=engine,
+# )
+# 
+# Base = declarative_base()
+# _schema_ready = False
+# _schema_lock = Lock()
+# _backup_engine = None  # Will be created if primary fails
 
-# Enhanced engine configuration for Supabase Connection Pooling
-engine = create_engine(
-    DATABASE_URL,
-    poolclass=NullPool,  # Critical: NullPool prevents pool conflicts with pgBouncer
-    pool_pre_ping=True,  # Test connection before using
-    connect_args={
-        "connect_timeout": 10,
-        "keepalives": 1,
-        "keepalives_idle": 30,
-    },
-    echo=False,  # Set to True for SQL debugging
-)
-
-SessionLocal = sessionmaker(
-    autocommit=False,
-    autoflush=False,
-    bind=engine,
-)
-
+# Placeholder for when database is disabled
+engine = None
+SessionLocal = None
 Base = declarative_base()
 _schema_ready = False
 _schema_lock = Lock()
-_backup_engine = None  # Will be created if primary fails
+_backup_engine = None
 
 
 def _get_working_session():
     """
     Get a working database session with fallback mechanism.
     If primary connection fails, tries backup connection.
+    
+    NOTE: Currently disabled - database features are not active.
     """
+    raise RuntimeError(
+        "Database features are currently disabled. "
+        "The API is running in CSV-only mode. "
+        "To enable database: uncomment initialization in app/db/database.py"
+    )
+    
     global _backup_engine
     
     try:
