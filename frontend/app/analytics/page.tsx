@@ -8,7 +8,15 @@ import { ArrowLeft, TrendingDown, TrendingUp, Zap, Compass, Activity, BrainCircu
 import { Asteroid, getClassColors, getClassDescription } from '@/lib/data';
 import { fetchTargets, formatUSD } from '@/lib/api';
 import { CompositionChart } from '@/components/composition-chart';
-import { OrbitalOrrery } from '@/components/ui/OrbitalOrrery';
+import dynamic from 'next/dynamic';
+
+const OrbitalOrrery = dynamic(
+  () => import('@/components/ui/OrbitalOrrery').then(m => m.OrbitalOrrery),
+  { 
+    ssr: false, 
+    loading: () => <div className="h-[400px] w-full bg-black/50 animate-pulse border border-white/10 rounded-lg flex items-center justify-center text-white/50 font-mono text-sm tracking-widest">INITIALIZING ORBITAL TELEMETRY...</div> 
+  }
+);
 import { XaiTooltip } from '@/components/xai-tooltip';
 import {
   Dialog,
