@@ -6,15 +6,21 @@ FastAPI endpoints that orchestrate service calls and return responses.
 import sys
 import traceback
 from typing import List
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 from app.models.schemas import AsteroidTarget, HealthCheckResponse
 from app.core.config import settings
 from app.services import economics, orbital, physics
 from app.data import loader
+from app.services.ingestion import execute_pipeline
 
 # Create router instance
 router = APIRouter()
+
+# Initialize rate limiter
+limiter = Limiter(key_func=get_remote_address)
 
 
 def _is_pha(moid_au: float, absolute_magnitude: float) -> bool:
@@ -148,4 +154,56 @@ def get_targets():
         raise HTTPException(
             status_code=500,
             detail=f"Internal error: {error_detail[:100]}"
+        )
+
+
+@router.post("/api/admin/pipeline/run", tags=["Admin"])
+@limiter.limit("2/minute")
+def trigger_data_pipeline(request: Request):
+    """
+    Admin endpoint: Trigger the live ML data ingestion pipeline.
+    
+    **Security Notice:** This endpoint is rate-limited to 2 requests per minute.
+    It fetches live data from NASA JPL SBDB API, applies K-Means spectral
+    classification, and merges updates into the production asteroid CSV.
+    
+    **Use Case:** Scheduled daily updates or manual data refresh by operators.
+    
+    Returns:
+        dict: Success status and number of asteroids processed
+        
+    Raises:
+        HTTPException: 500 if pipeline execution fails
+    """
+    print("[ADMIN] Pipeline trigger received", file=sys.stderr)
+    
+    try:
+        success, asteroids_processed = execute_pipeline()
+        
+        if not success:
+            raise HTTPException(
+                status_code=500,
+                detail="Data pipeline execution failed. Check server logs for details."
+            )
+        
+        response = {
+            "status": "success",
+            "message": "Data pipeline executed successfully",
+            "asteroids_processed": asteroids_processed,
+            "data_source": "NASA JPL SBDB API",
+            "classification_method": "K-Means (n_clusters=3, albedo-based)"
+        }
+        
+        print(f"[ADMIN] ✅ Pipeline completed: {asteroids_processed} asteroids", file=sys.stderr)
+        return response
+        
+    except HTTPException:
+        raise
+    except Exception as exc:
+        error_detail = str(exc)
+        print(f"[ADMIN] ❌ Pipeline error: {error_detail}", file=sys.stderr)
+        print(f"[ADMIN] Full traceback:\n{traceback.format_exc()}", file=sys.stderr)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Pipeline execution failed: {error_detail[:100]}"
         )

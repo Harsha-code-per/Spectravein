@@ -54,7 +54,6 @@ def load_asteroid_dataframe() -> pd.DataFrame:
     df = pd.read_csv(csv_path)
     print(f"[CSV] ✅ Loaded {len(df)} asteroids from CSV")
     
-    # CSV columns: id,full_name,neo,pha,moid,e,a,q,i,diameter,albedo,class,H,spectral_class
     # Basic validation - check for critical columns
     required_columns = ['id', 'moid', 'e', 'a', 'i', 'albedo', 'diameter']
     

@@ -8,9 +8,11 @@ Deployed on Azure App Service (Python 3.11 runtime).
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
 from app.core.config import settings
-from app.api.endpoints import router
+from app.api.endpoints import router, limiter
 
 
 def create_application() -> FastAPI:
@@ -29,6 +31,10 @@ def create_application() -> FastAPI:
         docs_url="/docs" if settings.is_development else None,
         redoc_url="/redoc" if settings.is_development else None,
     )
+    
+    # ── Rate Limiting (SECURITY) ──────────────────────────────────────────
+    app.state.limiter = limiter
+    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
     
     # ── CORS Middleware (SECURITY CRITICAL) ──────────────────────────────
     allowed_origins = settings.get_allowed_origins()
