@@ -24,6 +24,7 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
+  applicationName: "SPECTRAVEIN",
   title: "SPECTRAVEIN · Orbital Mining Intelligence",
   description:
     "Transforming raw JPL spectral data into high-yield financial targets. Asteroid classification, ROI modeling, and mission feasibility scoring.",

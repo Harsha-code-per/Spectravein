@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useMemo } from 'react';
+import { memo, useMemo, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Stars } from '@react-three/drei';
 import * as THREE from 'three';
@@ -27,7 +27,7 @@ function makeOrbitPoints(a: number, e: number, segments = 256): THREE.Vector3[] 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
 /** Thin line ring for an orbit path. */
-function OrbitRing({
+const OrbitRing = memo(function OrbitRing({
   a, e, inclinationDeg, color,
 }: {
   a: number; e: number; inclinationDeg: number; color: string;
@@ -48,10 +48,11 @@ function OrbitRing({
       </line>
     </group>
   );
-}
+});
+OrbitRing.displayName = 'OrbitRing';
 
 /** Small body (planet / asteroid) that orbits its ellipse over time. */
-function OrbitingBody({
+const OrbitingBody = memo(function OrbitingBody({
   a, e, inclinationDeg, color, radius, speed,
 }: {
   a: number; e: number; inclinationDeg: number;
@@ -80,10 +81,11 @@ function OrbitingBody({
       <meshBasicMaterial color={color} />
     </mesh>
   );
-}
+});
+OrbitingBody.displayName = 'OrbitingBody';
 
 /** Glowing Sun at the origin. */
-function Sun() {
+const Sun = memo(function Sun() {
   const ref = useRef<THREE.Mesh>(null!);
   useFrame(({ clock }) => {
     // Gentle pulse
@@ -100,11 +102,12 @@ function Sun() {
       </mesh>
     </>
   );
-}
+});
+Sun.displayName = 'Sun';
 
 // ── Scene ─────────────────────────────────────────────────────────────────────
 
-function Scene({ asteroid }: { asteroid: Asteroid }) {
+const Scene = memo(function Scene({ asteroid }: { asteroid: Asteroid }) {
   const { semi_major_axis_au: a, eccentricity: e, inclination } = asteroid;
   const clampedE = Math.min(e, 0.98); // prevent degenerate parabola
 
@@ -138,7 +141,8 @@ function Scene({ asteroid }: { asteroid: Asteroid }) {
       />
     </>
   );
-}
+});
+Scene.displayName = 'Scene';
 
 // ── Public component ──────────────────────────────────────────────────────────
 
@@ -146,7 +150,7 @@ interface Props {
   asteroid: Asteroid;
 }
 
-export function OrbitalOrrery({ asteroid }: Props) {
+function OrbitalOrreryComponent({ asteroid }: Props) {
   return (
     <Canvas
       camera={{ position: [0, 3.5, 5], fov: 50 }}
@@ -156,3 +160,6 @@ export function OrbitalOrrery({ asteroid }: Props) {
     </Canvas>
   );
 }
+
+export const OrbitalOrrery = memo(OrbitalOrreryComponent);
+OrbitalOrrery.displayName = 'OrbitalOrrery';

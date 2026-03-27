@@ -5,7 +5,7 @@ import { motion, AnimatePresence, useSpring, useMotionValue } from 'framer-motio
 import { ChevronLeft, ChevronRight, Lock } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Asteroid, AsteroidClass, getClassColors } from '@/lib/data';
+import { Asteroid, AsteroidClass } from '@/lib/data';
 import { formatUSDShort } from '@/lib/api';
 import { XaiTooltip } from '@/components/xai-tooltip';
 
@@ -77,7 +77,7 @@ function AsteroidThumbnail({ asteroid }: { asteroid: Asteroid }) {
       <p className="font-mono text-[9px] uppercase tracking-widest" style={{ color: '#FF3831' }}>
         {asteroid.classification}-Type Asteroid
       </p>
-      <p className="mt-0.5 text-xs font-bold leading-snug text-white">
+      <p className="mt-0.5 text-sm font-bold leading-snug text-white">
         {asteroid.full_name.length > 24
           ? asteroid.full_name.slice(0, 24) + '…'
           : asteroid.full_name}
@@ -145,7 +145,7 @@ function AsteroidRow({ asteroid, rank, isSelected, onSelect, onPointerEnter, onP
 
       {/* Rank */}
       <motion.span
-        className="w-9 shrink-0 font-mono text-[11px]"
+        className="w-9 shrink-0 font-mono text-sm"
         animate={{ color: hov ? RED : '#3f3f46' }}
         transition={{ duration: 0.15 }}
       >
@@ -156,7 +156,7 @@ function AsteroidRow({ asteroid, rank, isSelected, onSelect, onPointerEnter, onP
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <motion.p
-            className="truncate text-sm font-bold leading-tight"
+            className="truncate text-base font-bold leading-tight"
             animate={{ color: col }}
             transition={{ duration: 0.15 }}
           >
@@ -174,14 +174,14 @@ function AsteroidRow({ asteroid, rank, isSelected, onSelect, onPointerEnter, onP
             />
           )}
         </div>
-        <p className="font-mono text-[9px] text-white/20">
+        <p className="font-mono text-sm text-zinc-300">
           JPL:{asteroid.id}
         </p>
       </div>
 
       {/* Class */}
       <motion.span
-        className="hidden w-12 shrink-0 font-mono text-xs sm:block"
+        className="hidden w-12 shrink-0 font-mono text-sm sm:block"
         animate={{ color: hov ? RED : '#52525b' }}
         transition={{ duration: 0.15 }}
       >
@@ -190,7 +190,7 @@ function AsteroidRow({ asteroid, rank, isSelected, onSelect, onPointerEnter, onP
 
       {/* Diameter */}
       <motion.span
-        className="hidden w-20 shrink-0 font-mono text-xs sm:block"
+        className="hidden w-20 shrink-0 font-mono text-sm sm:block"
         animate={{ color: hov ? RED : '#52525b' }}
         transition={{ duration: 0.15 }}
       >
@@ -199,7 +199,7 @@ function AsteroidRow({ asteroid, rank, isSelected, onSelect, onPointerEnter, onP
 
       {/* Access */}
       <motion.span
-        className="hidden w-14 shrink-0 text-right font-mono text-[11px] md:block"
+        className="hidden w-14 shrink-0 text-right font-mono text-sm md:block"
         animate={{ color: hov ? RED : '#52525b' }}
         transition={{ duration: 0.15 }}
       >
@@ -208,7 +208,7 @@ function AsteroidRow({ asteroid, rank, isSelected, onSelect, onPointerEnter, onP
 
       {/* Valuation */}
       <motion.span
-        className="w-20 shrink-0 text-right font-mono text-xs font-bold"
+        className="w-20 shrink-0 text-right font-mono text-sm font-bold"
         animate={{ color: hov ? RED : '#e4e4e7' }}
         transition={{ duration: 0.15 }}
       >
@@ -337,7 +337,7 @@ export function TargetFinder({ targets, loading, selected, onSelect }: Props) {
             value={search}
             onChange={(e) => handleSearch(e.target.value)}
             placeholder="Search asteroid name…"
-            className="border-0 border-b border-white/15 bg-transparent pl-0 font-mono text-xs text-white placeholder:text-white/25
+            className="border-0 border-b border-white/15 bg-transparent pl-0 font-mono text-sm text-white placeholder:text-zinc-300
                        focus-visible:border-white/40 focus-visible:ring-0 rounded-none h-9"
           />
         </div>
@@ -345,8 +345,8 @@ export function TargetFinder({ targets, loading, selected, onSelect }: Props) {
         {/* Sort */}
         <Select value={sort} onValueChange={handleSort}>
           <SelectTrigger
-            className="w-44 border-0 border-b border-white/15 bg-transparent font-mono text-[11px]
-                       uppercase tracking-widest text-white/50 focus:ring-0 rounded-none h-9"
+            className="w-48 border-0 border-b border-white/15 bg-transparent font-mono text-sm
+                       uppercase tracking-widest text-zinc-300 focus:ring-0 rounded-none h-9"
           >
             <SelectValue />
           </SelectTrigger>
@@ -355,7 +355,7 @@ export function TargetFinder({ targets, loading, selected, onSelect }: Props) {
               <SelectItem
                 key={o.value}
                 value={o.value}
-                className="font-mono text-[11px] uppercase tracking-widest focus:bg-white/10 focus:text-white"
+                className="font-mono text-sm uppercase tracking-widest focus:bg-white/10 focus:text-white"
               >
                 {o.label}
               </SelectItem>
@@ -366,9 +366,9 @@ export function TargetFinder({ targets, loading, selected, onSelect }: Props) {
 
       {/* ── Column headers ── */}
       <div className="flex items-center gap-4 border-b border-white/8 px-2 pb-3">
-        <span className="w-9 shrink-0 font-mono text-[9px] uppercase tracking-widest text-white/20">#</span>
-        <span className="flex-1 font-mono text-[9px] uppercase tracking-widest text-white/20">Name</span>
-        <span className="hidden w-12 shrink-0 font-mono text-[9px] uppercase tracking-widest text-white/20 sm:block">
+        <span className="w-9 shrink-0 font-mono text-[10px] uppercase tracking-widest text-zinc-300">#</span>
+        <span className="flex-1 font-mono text-[10px] uppercase tracking-widest text-zinc-300">Name</span>
+        <span className="hidden w-12 shrink-0 font-mono text-[10px] uppercase tracking-widest text-zinc-300 sm:block">
           <XaiTooltip
             term="Classification"
             explanation="The spectral taxonomy of the asteroid (C, S, or M). This dictates its primary resource composition: volatiles, silicates, or heavy metals."
@@ -376,7 +376,7 @@ export function TargetFinder({ targets, loading, selected, onSelect }: Props) {
             Class
           </XaiTooltip>
         </span>
-        <span className="hidden w-20 shrink-0 font-mono text-[9px] uppercase tracking-widest text-white/20 sm:block">
+        <span className="hidden w-20 shrink-0 font-mono text-[10px] uppercase tracking-widest text-zinc-300 sm:block">
           <XaiTooltip
             term="Diameter"
             explanation="The estimated physical size in kilometers. This is multiplied by the class density to calculate the total extractable mass."
@@ -384,7 +384,7 @@ export function TargetFinder({ targets, loading, selected, onSelect }: Props) {
             Diam.
           </XaiTooltip>
         </span>
-        <span className="hidden w-14 shrink-0 text-right font-mono text-[9px] uppercase tracking-widest text-white/20 md:block">
+        <span className="hidden w-14 shrink-0 text-right font-mono text-[10px] uppercase tracking-widest text-zinc-300 md:block">
           <XaiTooltip
             term="Accessibility"
             explanation="A proprietary score (0-100) combining Earth distance and orbital tilt. Higher scores indicate highly cost-effective mining missions."
@@ -392,7 +392,7 @@ export function TargetFinder({ targets, loading, selected, onSelect }: Props) {
             Access.
           </XaiTooltip>
         </span>
-        <span className="w-20 shrink-0 text-right font-mono text-[9px] uppercase tracking-widest text-white/20">
+        <span className="w-20 shrink-0 text-right font-mono text-[10px] uppercase tracking-widest text-zinc-300">
           <XaiTooltip
             term="Value"
             explanation="The estimated gross market value, calculated using the asteroid's volume, predicted density, and current terrestrial commodity prices."
@@ -412,7 +412,7 @@ export function TargetFinder({ targets, loading, selected, onSelect }: Props) {
           transition={{ duration: 0.2 }}
         >
           {pageItems.length === 0 ? (
-            <div className="py-16 text-center font-mono text-xs uppercase tracking-widest text-white/20">
+            <div className="py-16 text-center font-mono text-sm uppercase tracking-widest text-zinc-300">
               No targets matched
             </div>
           ) : (
@@ -433,7 +433,7 @@ export function TargetFinder({ targets, loading, selected, onSelect }: Props) {
 
       {/* ── Footer: count + pagination ── */}
       <div className="mt-6 flex items-center justify-between gap-4">
-        <span className="font-mono text-[10px] uppercase tracking-widest text-white/25">
+        <span className="font-mono text-sm uppercase tracking-widest text-zinc-300">
           {processed.length > 0
             ? `${pageStart + 1}–${Math.min(pageStart + ITEMS_PER_PAGE, processed.length)} of ${processed.length} targets`
             : '0 targets'}

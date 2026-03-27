@@ -40,47 +40,66 @@ function Reveal({
   );
 }
 
-// ── How It Works data ───────────────────────────────────────────────────────
+// ── Feature Highlights data ──────────────────────────────────────────────────
 
 const STEPS = [
   {
     num: '01',
-    title: 'SPECTRAL\nCLASSIFICATION',
-    tag: 'Machine Learning',
-    body: `Raw albedo and orbital data is fed into an unsupervised K-Means clustering model trained on the JPL Small-Body Database. Each Near-Earth Object is classified into one of three spectral families — Carbonaceous (C), Silicaceous (S), or Metallic (M) — each with a distinct resource composition and economic profile. The classifier runs across 802 labeled NEOs with zero manual labeling.`,
-    stat: '802',
-    statLabel: 'NEOs classified',
+    title: 'LIVE NASA\nTELEMETRY',
+    tag: 'Autonomous Ingestion',
+    body: `SPECTRAVEIN runs a live autonomous ingestion engine wired to the NASA/JPL Small-Body Database. New Near-Earth Object telemetry is synchronized into the intelligence layer without manual intervention, keeping mission decisions anchored to current orbital data.`,
+    stat: '24/7',
+    statLabel: 'autonomous ingest',
     accent: '#ffffff',
   },
   {
     num: '02',
-    title: 'DELTA-V\nACCESSIBILITY',
-    tag: 'Orbital Mechanics',
-    body: `Mission cost is dominated by delta-v — the velocity change required to intercept a target. SPECTRAVEIN derives an Accessibility Score from two JPL parameters: Earth MOID (Minimum Orbit Intersection Distance) and orbital inclination. Low-MOID, low-inclination targets score near 100 and require modest launch energy. High-inclination deep-belt targets score near zero and are economically prohibitive.`,
-    stat: 'MOID + i',
-    statLabel: 'scoring inputs',
+    title: 'ON-THE-FLY ML\nCLASSIFICATION',
+    tag: 'Machine Learning',
+    body: `Incoming asteroid telemetry is classified by an unsupervised K-Means model using albedo signatures. Every target is automatically grouped into Carbonaceous (C), Silicaceous (S), or Metallic (M) profiles for immediate composition-aware analytics.`,
+    stat: 'K-Means',
+    statLabel: 'unsupervised spectral model',
     accent: '#FF3831',
   },
   {
     num: '03',
-    title: 'MARKET SHOCK\nDEFLATOR',
-    tag: 'Macro-Economics',
-    body: `A 37 km asteroid contains more platinum than humanity has mined in all of history. Bringing it to market without a crash is the central challenge of asteroid economics. SPECTRAVEIN applies a logarithmic penalty to raw valuations: Adjusted Value = Gross Value × (0.1 + 0.9 / (1 + log₁₀(mass_kg / 10⁹))). Massive bodies suffer 80%+ discounts. Sub-tonne payloads are barely penalized. The model returns a real, investable figure.`,
-    stat: '−80%',
-    statLabel: 'Ganymed deflator',
+    title: 'INTERACTIVE 3D\nORBITAL MECHANICS',
+    tag: 'WebGL Visualization',
+    body: `The analytics surface includes a cinematic 60fps WebGL/Three.js heliocentric projection engine. Teams can inspect trajectory geometry, inclination, eccentricity, and Earth-relative accessibility through a responsive interactive orbital interface.`,
+    stat: '60fps',
+    statLabel: 'cinematic projection engine',
     accent: '#a1a1aa',
+  },
+  {
+    num: '04',
+    title: 'ENTERPRISE\nSECURITY',
+    tag: 'Production Hardening',
+    body: `SPECTRAVEIN is hardened with SlowAPI rate limiting and production-grade CORS controls. This security layer protects API surfaces from abusive traffic while preserving low-latency telemetry delivery to the dashboard and analytics stack.`,
+    stat: 'SlowAPI',
+    statLabel: 'rate-limited API perimeter',
+    accent: '#22d3ee',
+  },
+  {
+    num: '05',
+    title: 'LIVE TARGET\nINTELLIGENCE SCALE',
+    tag: 'Operational Dataset',
+    body: `SPECTRAVEIN now serves a continuously refreshed catalog of 934 NEO intelligence targets, combining historical orbital economics with newly ingested telemetry. Decision-makers can move from scan to deep mission analysis in seconds.`,
+    stat: '934',
+    statLabel: 'active NEO targets',
+    accent: '#4ade80',
   },
 ] as const;
 
 // ── Page ────────────────────────────────────────────────────────────────────
 
-const WORDS = ['ORBITAL', 'MINING', 'INTELLIGENCE'] as const;
+const WORDS = ['SPECTRAVEIN', 'LIVE ORBITAL', 'INTELLIGENCE'] as const;
 
 const TICKER = [
-  'ASTEROID CLASSIFICATION', 'MINING POTENTIAL',
-  'SPECTRAL ANALYSIS', 'DELTA-V ACCESSIBILITY',
-  'JPL HORIZONS DATA', 'ROI MODELING',
-  'MISSION FEASIBILITY', 'NEAR-EARTH OBJECTS',
+  'LIVE NASA TELEMETRY', 'AUTONOMOUS INGESTION ENGINE',
+  'ON-THE-FLY ML CLASSIFICATION', 'K-MEANS ALBEDO CLUSTERING',
+  'INTERACTIVE 3D ORRERY', '60FPS WEBGL VISUALIZATION',
+  'ENTERPRISE SECURITY', 'SLOWAPI RATE LIMITING',
+  'PRODUCTION CORS CONTROLS', '934 ACTIVE NEO TARGETS',
 ];
 
 export default function Home() {
@@ -116,7 +135,7 @@ export default function Home() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2, duration: 0.7, ease }}
           >
-            Near-Earth Object Intelligence Platform &nbsp;·&nbsp; JPL HORIZONS
+            SPECTRAVEIN Autonomous Orbital Intelligence Platform &nbsp;·&nbsp; Live NASA/JPL Telemetry
           </motion.p>
 
           {/* Staggered giant serif words */}
@@ -143,7 +162,7 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.65, duration: 0.7, ease }}
           >
-            Classifying the cosmos. Calculating the future.
+            Live telemetry ingestion, autonomous ML classification, and enterprise-grade orbital economics for mission-critical asteroid intelligence.
           </motion.p>
 
           {/* CTA buttons */}
@@ -159,7 +178,7 @@ export default function Home() {
               className="group relative overflow-hidden border border-white bg-white px-8 py-4 font-mono text-[11px] uppercase tracking-widest text-black transition-all duration-300 hover:bg-transparent hover:text-white"
             >
               <span className="relative z-10 flex items-center gap-2">
-                Enter Command Dashboard
+                Launch Intelligence Dashboard
                 <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
               </span>
             </Link>
@@ -215,7 +234,7 @@ export default function Home() {
         <div className="border-t border-white/8 px-8 py-10 md:px-14">
           <Reveal>
             <p className="font-mono text-[9px] uppercase tracking-[0.4em] text-white/25">
-              — Methodology
+              — SPECTRAVEIN Feature Highlights
             </p>
           </Reveal>
         </div>
@@ -299,7 +318,7 @@ export default function Home() {
         </Reveal>
         <Reveal delay={0.16}>
           <p className="mx-auto mt-8 max-w-sm text-sm leading-relaxed text-white/30">
-            Access the full 802-NEO catalog with live JPL data, ML classification, and real-time ROI modeling.
+            Access the live 934-target intelligence catalog with autonomous NASA ingestion, on-the-fly spectral ML, and real-time mission economics.
           </p>
         </Reveal>
         <Reveal delay={0.22}>
@@ -309,7 +328,7 @@ export default function Home() {
               className="group border border-white bg-white px-10 py-4 font-mono text-[11px] uppercase tracking-widest text-black transition-all duration-300 hover:bg-transparent hover:text-white"
             >
               <span className="flex items-center gap-2">
-                Open Dashboard
+                Launch Intelligence Dashboard
                 <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
               </span>
             </Link>
@@ -342,7 +361,7 @@ export default function Home() {
               </div>
               <p className="mt-3 max-w-xs font-mono text-[10px] leading-relaxed text-white/20">
                 Orbital Mining Intelligence Platform.<br />
-                Powered by JPL HORIZONS · 802 NEOs catalogued.
+                Powered by NASA/JPL live telemetry · 934 NEO targets active.
               </p>
             </div>
 
